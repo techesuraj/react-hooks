@@ -2,39 +2,50 @@
 // http://localhost:3000/isolated/exercise/06.js
 
 import * as React from 'react'
-import {fetchPokemon, PokemonForm, PokemonInfoFallback, PokemonDataView} from '../pokemon'
+import {
+  fetchPokemon,
+  PokemonForm,
+  PokemonInfoFallback,
+  PokemonDataView,
+} from '../pokemon'
 
 function PokemonInfo({pokemonName}) {
   // 🐨 Have state for the pokemon (null)
+  const [status, setStatus] = React.useState('idle');
   const [pokemon, setPokeman] = React.useState(null)
-  // 🐨 use React.useEffect where the callback should be called whenever the
+  const [error, setError] = React.useState(null)
   React.useEffect(() => {
-    setPokeman(null)
-    if (pokemonName) {
-      fetchPokemon(pokemonName).then(pokemonData => setPokeman(pokemonData))
-    } else {
+    if (!pokemonName) {
       return
     }
+    setStatus('pending');
+    fetchPokemon(pokemonName).then(
+      pokemonData => {
+        setPokeman(pokemonData)
+        setStatus('resolved')
+      },
+      error => {
+        setError(error)
+        setStatus('rejected')
+      },
+    )
   }, [pokemonName])
-  // pokemon name changes.
-  // 💰 DON'T FORGET THE DEPENDENCIES ARRAY!
-  // 💰 if the pokemonName is falsy (an empty string) then don't bother making the request (exit early).
-  // 🐨 before calling `fetchPokemon`, make sure to update the loading state
-  // 💰 Use the `fetchPokemon` function to fetch a pokemon by its name:
-  //   fetchPokemon('Pikachu').then(
-  //     pokemonData => { /* update all the state here */},
-  //   )
-  // 🐨 return the following things based on the `pokemon` state and `pokemonName` prop:
-  //   1. no pokemonName: 'Submit a pokemon'
-  //   2. pokemonName but no pokemon: <PokemonInfoFallback name={pokemonName} />
-  //   3. pokemon: <PokemonDataView pokemon={pokemon} />
-  if(!pokemonName) {
+  
+  if (status === 'idle') {
     return 'Submit a pokemon'
-  } else if(!pokemon) {
+  } else if (status === 'pending') {
     return <PokemonInfoFallback name={pokemonName} />
+  } else if (status === 'rejected') {
+    return (
+      <div role="alert">
+        There was an error:{' '}
+        <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+      </div>
+    )
   } else {
     return <PokemonDataView pokemon={pokemon} />
   }
+  throw new Error('This is impossible');
 }
 
 function App() {
